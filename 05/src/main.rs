@@ -3,6 +3,7 @@ use crypto::md5::Md5;
 use crypto::digest::Digest;
 
 use std::io;
+use std::io::Write;
 use std::io::BufRead;
 
 fn main() {
@@ -17,7 +18,7 @@ fn main() {
     let mut i = 0u32;
 
     while charsfound != 8 {
-        let candidate = String::from(input.as_str()) + i.to_string().as_str();
+        let candidate = input.clone() + &i.to_string();
         hasher.input_str(&candidate);
 
         hasher.result(&mut hash);
@@ -38,7 +39,7 @@ fn main() {
     let mut password: [char; 8] = ['_'; 8];
 
     while charsfound != 8 {
-        let candidate = String::from(input.as_str()) + i.to_string().as_str();
+        let candidate = input.clone() + &i.to_string();
         hasher.input_str(&candidate);
 
         hasher.result(&mut hash);
@@ -48,13 +49,16 @@ fn main() {
             password[(hash[2] & 0x0f) as usize] =
                 format!("{:x}", hash[3] >> 4).chars().next().unwrap();
             charsfound += 1;
+
+            print!("\r");
             for c in password.iter() {
                 print!("{}", c);
             }
-            println!();
+            let _ = io::stdout().flush();
         }
 
         hasher.reset();
         i += 1;
     }
+    println!();
 }
