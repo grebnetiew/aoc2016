@@ -4,3 +4,4 @@
 04 Rooms: checksum and decrypt a list of rooms
 05 Passwords: find md5 hashes starting in zeros
 06 Noise: find most frequent element in some sets of letters
+07 Network snooping: search strings for patterns
