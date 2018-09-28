@@ -1,0 +1,7 @@
+[package]
+name = "puzzle10"
+version = "0.1.0"
+authors = ["Erik Weitenberg <eweitenberg@gmail.com>"]
+
+[dependencies]
+regex = "0.2"
