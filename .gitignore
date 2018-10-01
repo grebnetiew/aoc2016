@@ -33,3 +33,6 @@
 
 # Debug information
 *.pdb
+
+# Cargo builds
+target/
