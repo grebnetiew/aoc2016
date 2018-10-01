@@ -3,7 +3,6 @@ use regex::Regex;
 
 use std::io;
 use std::io::BufRead;
-//use std::collections::HashMap;
 
 #[derive(Copy, Clone)]
   // Automatically provide a copy constructor that just copies the bytes of my struct
@@ -32,20 +31,14 @@ fn main() {
     let r1 = Regex::new(r"value (\d+) goes to bot (\d+)").unwrap();
     let r2 = Regex::new(r"bot (\d+) gives low to (bot|output) (\d+) and high to (bot|output) (\d+)").unwrap();
 
-    let mut line = input.next();
-    while line.is_some() {
-        let s = line // which is an Option (Some / None)
-            .unwrap() // Which is a Result (Ok / Err)
-            .unwrap(); // Which is a String;
-        if r1.is_match(&s) {
-            let caps = r1.captures(&s).unwrap();
+    while let Some(Ok(s)) = input.next() {
+        if let Some(caps) = r1.captures(&s) {
             let value = caps.get(1).unwrap().as_str().parse::<i32>().unwrap();
             let bot = caps.get(2).unwrap().as_str().parse::<usize>().unwrap();
 
             give_bot(&mut bots[bot], value);
             resolve_bot(&mut bots, bot);
-        } else if r2.is_match(&s) {
-            let caps = r2.captures(&s).unwrap();
+        } else if let Some(caps) = r2.captures(&s) {
             let bot = caps.get(1).unwrap().as_str().parse::<usize>().unwrap();
             let type1 = caps.get(2).unwrap().as_str();
             let num1 = caps.get(3).unwrap().as_str().parse::<usize>().unwrap();
@@ -62,12 +55,7 @@ fn main() {
             };
             resolve_bot(&mut bots, bot);
         }
-        line = input.next();
     }
-
-    // for bot in bots.iter() {
-    //     println!("Bot with {:?} {:?}", bot.contents1, bot.contents2);
-    // }
 }
 
 fn give_bot(bot: &mut Bot, value: i32) {
@@ -78,7 +66,10 @@ fn give_bot(bot: &mut Bot, value: i32) {
 }
 
 fn output(output: usize, value: i32) {
-    println!("Output({}) = {}", output, value);
+	/* This solves 10b */
+	if output == 0 || output == 1 || output == 2 {
+	    println!("Output({}) = {}", output, value);
+	}
 }
 
 fn resolve_bot(mut bots: &mut [Bot], bot: usize) {
@@ -86,15 +77,8 @@ fn resolve_bot(mut bots: &mut [Bot], bot: usize) {
         return
     }
 
-    let lower: i32;
-    let upper: i32;
-    if bots[bot].contents1.unwrap() > bots[bot].contents2.unwrap() {
-        upper = bots[bot].contents1.unwrap();
-        lower = bots[bot].contents2.unwrap();
-    } else {
-        lower = bots[bot].contents1.unwrap();
-        upper = bots[bot].contents2.unwrap();
-    }
+    let sort = |a, b: i32| { if a > b { (b,a) } else { (a,b) } };
+    let (lower, upper) = sort(bots[bot].contents1.unwrap(), bots[bot].contents2.unwrap());
 
     /* This solves 10a */
     if lower == 17 && upper == 61 {
