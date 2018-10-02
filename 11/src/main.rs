@@ -1,5 +1,8 @@
+use std::hash::Hash;
+use std::hash::Hasher;
 use std::io;
 use std::io::BufRead;
+use std::boxed;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
@@ -15,38 +18,18 @@ struct ReachedState {
 
 static mut nChemicals: usize = 0;
 
-#[derive(Clone)]
-struct State {
-	m: HashMap<Object, usize>
-}
+type State = Box<HashMap<Object, usize>>;
 
-impl PartialEq for State {
-	fn eq(&self, other: &State) -> bool {
-		for i in 0..nChemicals {
-			if self.m.get(&Object::Generator(i)) != other.m.get(&Object::Generator(i)) || self.m.get(&Object::Microchip(i)) != other.m.get(&Object::Microchip(i)) {
-				return false
-			}
-		}
-		true
-	}
-}
+// impl Hash for State {
+// 	fn hash<H: Hasher>(&self, hasher: &mut H) {
+// 		for (obj, floor) in self {
+// 			obj.hash(hasher);
+// 			floor.hash(hasher);
+// 		}
+//     }
+// }
 
-impl Eq for State {}
-
-impl Ord for State {
-	fn cmp(&self, other: &State) -> Ordering {
-		// I do not really care about the ordering of the states
-		Ordering::Equal
-	}
-}
-
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &State) -> Option<Ordering> {
-        None
-    }
-}
-
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 enum Object {
 	Generator(usize),
 	Microchip(usize),
@@ -60,15 +43,17 @@ impl Ord for ReachedState {
         // Notice that the we flip the ordering on costs.
         // In case of a tie we compare positions - this step is necessary
         // to make implementations of `PartialEq` and `Ord` consistent.
-        other.cost.cmp(&self.cost)
-            .then_with(|| self.position.cmp(&other.position))
+        other.cost.cmp(&self.cost).then(Ordering::Equal)
     }
 }
 
 // `PartialOrd` needs to be implemented as well.
 impl PartialOrd for ReachedState {
     fn partial_cmp(&self, other: &ReachedState) -> Option<Ordering> {
-        Some(self.cmp(other))
+    	match self.cmp(other) {
+    		Ordering::Equal => None,
+    		o => Some(o)
+    	}
     }
 }
 
@@ -78,11 +63,12 @@ impl PartialOrd for ReachedState {
 // to each node. This implementation isn't memory-efficient as it may leave duplicate
 // nodes in the queue. It also uses `usize::MAX` as a sentinel value,
 // for a simpler implementation.
-fn shortest_path(adj_list: &Vec<Vec<Edge>>, start: State, goal: State) -> Option<usize> {
+fn shortest_path(start: State, goal: State) -> Option<usize> {
     // dist[node] = current shortest distance from `start` to `node`
-    let mut dist: Vec<_> = (0..adj_list.len()).map(|_| usize::MAX).collect();
+    let mut dist: HashMap<State, usize> = HashMap::new();
 
     let mut heap = BinaryHeap::new();
+
 
     // We're at `start`, with a zero cost
     dist[start] = 0;
